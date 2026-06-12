@@ -31,7 +31,7 @@ func transliterateLatToCyr(text string) string {
 		"'": "ъ", "’": "ъ",
 	}
 
-	for _, pair := range []string{"sh", "ch", "ya", "yo", "yu", "ts", "Sh", "Ch", "Ya", "Yo", "Yu", "Ts", "SH", "CH", "YA", "YO", "YU", "TS", "O'", "O‘", "o'", "o‘", "G'", "G‘", "g'", "g‘"} {
+	for _, pair := range []string{"sh", "ch", "ts", "O'", "O‘", "o'", "o‘", "G'", "G‘", "g'", "g‘", "ya", "yo", "yu", "Sh", "Ch", "Ts", "Ya", "Yo", "Yu", "SH", "CH", "TS", "YA", "YO", "YU"} {
 		text = strings.ReplaceAll(text, pair, mapping[pair])
 	}
 	for lat, cyr := range mapping {
@@ -84,13 +84,32 @@ func processXLSX(inputFile, outputFile string) error {
 		}
 		for rowIndex, row := range rows {
 			for colIndex, cellValue := range row {
-				if cellValue != "" {
-					newText := transliterate(cellValue)
-					colName, err := excelize.ColumnNumberToName(colIndex + 1)
-					if err != nil {
-						continue
+				if cellValue == "" {
+					continue
+				}
+				colName, err := excelize.ColumnNumberToName(colIndex + 1)
+				if err != nil {
+					continue
+				}
+				cellName := fmt.Sprintf("%s%d", colName, rowIndex+1)
+
+				formula, _ := f.GetCellFormula(sheetName, cellName)
+				if formula != "" {
+					newFormula := transliterate(formula)
+					if newFormula != formula {
+						f.SetCellFormula(sheetName, cellName, newFormula)
 					}
-					cellName := fmt.Sprintf("%s%d", colName, rowIndex+1)
+					continue
+				}
+
+				cellType, _ := f.GetCellType(sheetName, cellName)
+				switch cellType {
+				case excelize.CellTypeBool, excelize.CellTypeNumber:
+					continue
+				}
+
+				newText := transliterate(cellValue)
+				if newText != cellValue {
 					f.SetCellValue(sheetName, cellName, newText)
 				}
 			}
