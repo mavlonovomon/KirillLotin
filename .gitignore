@@ -1,0 +1,12 @@
+# Binary
+tarjimon.exe
+*.exe
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
